@@ -38,9 +38,9 @@
                     <span class="nav-icon">📥</span>
                     <span>Fila</span>
                 </button>
-                <button class="nav-item hidden" id="tabChamados" data-view="chamados">
-                    <span class="nav-icon">🎫</span>
-                    <span>Chamados</span>
+                <button class="nav-item hidden" id="tabLogin" data-view="login">
+                    <span class="nav-icon">🔑</span>
+                    <span>Login</span>
                 </button>
                 <button class="nav-item hidden" id="tabUsuarios" data-view="usuarios">
                     <span class="nav-icon">👥</span>
@@ -66,6 +66,7 @@
                 <div class="row c-green">
                     <span class="label">Acesso</span>
                     <span class="value" id="fAcesso">—</span>
+                    <button class="falha-btn" id="filaFalha" title="Marcar falha">falha</button>
                     <button class="copy-btn" data-copy="fAcesso" title="Copiar">copiar</button>
                 </div>
                 <div class="row c-green">
@@ -106,96 +107,80 @@
             </div>
 
             <div class="actions">
-                <button class="generate-btn" id="concluir">Concluir chamado</button>
+                <button class="generate-btn" id="pronta">Pronta</button>
             </div>
         </section>
 
-        <section id="viewChamados" class="hidden">
+        <section id="viewLogin" class="hidden">
             <div class="content-head">
                 <div>
-                    <h1 class="content-title">Chamados</h1>
-                    <p class="content-sub">Abra e acompanhe os chamados</p>
+                    <h1 class="content-title">Login</h1>
+                    <p class="content-sub">Cadastre os logins que entram na fila</p>
                 </div>
             </div>
 
             <div class="stats">
                 <div class="stat-card">
-                    <span class="stat-label">Abertos</span>
-                    <span class="stat-value" id="stAbertos">0</span>
+                    <span class="stat-label">Disponíveis</span>
+                    <span class="stat-value" id="stDisponiveis">0</span>
                     <span class="stat-note">na fila</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Concluídos</span>
-                    <span class="stat-value" id="stConcluidos">0</span>
-                    <span class="stat-note">resolvidos</span>
+                    <span class="stat-label">Prontos</span>
+                    <span class="stat-value" id="stProntos">0</span>
+                    <span class="stat-note">finalizados</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Cancelados</span>
-                    <span class="stat-value" id="stCancelados">0</span>
-                    <span class="stat-note">não resolvidos</span>
+                    <span class="stat-label">Falha</span>
+                    <span class="stat-value" id="stFalha">0</span>
+                    <span class="stat-note">com problema</span>
                 </div>
             </div>
 
             <div class="subtabs">
-                <button class="subtab-btn active" data-sub="abertos">Abertos</button>
-                <button class="subtab-btn" data-sub="concluidos">Concluídos</button>
-                <button class="subtab-btn" data-sub="cancelados">Cancelados</button>
+                <button class="subtab-btn active" data-lsub="disponiveis">Disponíveis</button>
+                <button class="subtab-btn" data-lsub="prontos">Prontos</button>
+                <button class="subtab-btn" data-lsub="falha">Falha</button>
             </div>
 
-            <div id="subAbertos">
+            <div id="lsubDisponiveis">
                 <div class="panel admin-panel">
                     <div class="admin-card-head">
-                        <h2 class="admin-title">Abrir chamado</h2>
+                        <h2 class="admin-title">Adicionar login</h2>
                     </div>
-                    <form class="admin-form" id="formChamado" autocomplete="off">
-                        <input type="text" id="chTitulo" placeholder="Título" required>
-                        <input type="text" id="chCliente" placeholder="Cliente">
-                        <select id="chPrioridade" class="admin-select">
-                            <option value="Baixa">Baixa</option>
-                            <option value="Média" selected>Média</option>
-                            <option value="Alta">Alta</option>
-                        </select>
-                        <input type="text" id="chDescricao" placeholder="Descrição">
-                        <button type="submit" class="add-btn">Abrir</button>
+                    <form class="admin-form" id="formLogin" autocomplete="off">
+                        <input type="text" id="lgAcesso" placeholder="Acesso" required>
+                        <input type="text" id="lgSenha" placeholder="Senha">
+                        <input type="text" id="lg2fa" placeholder="2fa">
+                        <button type="submit" class="add-btn">Adicionar</button>
                     </form>
-                    <p class="admin-hint">Os chamados abertos entram na Fila de atendimento.</p>
+                    <p class="admin-hint">Os logins adicionados aparecem na Fila (Acesso, Senha, 2fa).</p>
                 </div>
 
                 <div class="panel admin-panel">
                     <div class="admin-card-head">
-                        <h2 class="admin-title">Importar em massa</h2>
+                        <h2 class="admin-title">Logins disponíveis</h2>
+                        <button class="clear-btn" id="limparLogins">Limpar tudo</button>
                     </div>
-                    <textarea id="bulkChamados" class="bulk-text" rows="8" placeholder="TITULO: Sistema fora do ar&#10;CLIENTE: Loja Azul&#10;PRIORIDADE: Alta&#10;DESCRICAO: Não consigo acessar&#10;&#10;TITULO: Dúvida no boleto&#10;CLIENTE: João&#10;PRIORIDADE: Baixa"></textarea>
-                    <div class="bulk-actions">
-                        <button class="add-btn" id="bulkAddChamados">Importar</button>
-                    </div>
-                    <p class="admin-hint">Blocos TITULO / CLIENTE / PRIORIDADE / DESCRICAO separados por linha em branco.</p>
-                </div>
-
-                <div class="panel admin-panel">
-                    <div class="admin-card-head">
-                        <h2 class="admin-title">Chamados abertos</h2>
-                        <button class="clear-btn" id="limparAbertos">Limpar tudo</button>
-                    </div>
-                    <ul class="conta-list" id="listaAbertos"></ul>
+                    <ul class="conta-list" id="listaLogins"></ul>
                 </div>
             </div>
 
-            <div id="subConcluidos" class="hidden">
+            <div id="lsubProntos" class="hidden">
                 <div class="panel admin-panel">
                     <div class="admin-card-head">
-                        <h2 class="admin-title">Chamados concluídos</h2>
+                        <h2 class="admin-title">Logins prontos</h2>
                     </div>
-                    <ul class="conta-list" id="listaConcluidos"></ul>
+                    <ul class="conta-list" id="listaProntos"></ul>
                 </div>
             </div>
 
-            <div id="subCancelados" class="hidden">
+            <div id="lsubFalha" class="hidden">
                 <div class="panel admin-panel">
                     <div class="admin-card-head">
-                        <h2 class="admin-title">Chamados cancelados</h2>
+                        <h2 class="admin-title">Logins com falha</h2>
                     </div>
-                    <ul class="conta-list" id="listaCancelados"></ul>
+                    <ul class="conta-list" id="listaFalha"></ul>
                 </div>
             </div>
         </section>
@@ -237,6 +222,17 @@
             </div>
         </section>
         </main>
+    </div>
+
+    <div class="modal-overlay hidden" id="falhaModal">
+        <div class="modal-box">
+            <h2 class="modal-title">Marcar como falha?</h2>
+            <p class="modal-text">O login atual sairá da fila e vai para a lista de falhas. Em seguida o próximo login é exibido.</p>
+            <div class="modal-actions">
+                <button class="danger-btn" id="confirmarFalha">Confirmar falha</button>
+                <button class="cancel-btn" id="recusarFalha">Recusar</button>
+            </div>
+        </div>
     </div>
 
     <div class="toast" id="toast"></div>

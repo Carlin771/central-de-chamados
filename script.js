@@ -46,16 +46,26 @@ function copiarTexto(texto) {
 }
 
 // ----- Caches em memória (carregados do Supabase) -----
-let cacheChamados = [];
+let cacheLogins = [];
+let cacheProntos = [];
+let cacheFalhas = [];
 let cacheUsuarios = [];
 
-function getChamados() { return cacheChamados; }
 function getUsuarios() { return cacheUsuarios; }
-function chamadosPorStatus(s) { return cacheChamados.filter(c => c.status === s); }
 
-async function recarregarChamados() {
-    const { data, error } = await sb.from("chamados").select("*").order("criado_em", { ascending: true });
-    if (!error && data) cacheChamados = data;
+async function recarregarLogins() {
+    const { data, error } = await sb.from("login").select("*").order("criado_em", { ascending: true });
+    if (!error && data) cacheLogins = data;
+    return !error;
+}
+async function recarregarProntos() {
+    const { data, error } = await sb.from("prontos").select("*").order("criado_em", { ascending: false });
+    if (!error && data) cacheProntos = data;
+    return !error;
+}
+async function recarregarFalhas() {
+    const { data, error } = await sb.from("falha").select("*").order("criado_em", { ascending: false });
+    if (!error && data) cacheFalhas = data;
     return !error;
 }
 async function recarregarUsuarios() {
@@ -64,175 +74,170 @@ async function recarregarUsuarios() {
     return !error;
 }
 async function carregarTudo() {
-    await Promise.all([recarregarChamados(), recarregarUsuarios()]);
+    await Promise.all([recarregarLogins(), recarregarProntos(), recarregarFalhas(), recarregarUsuarios()]);
 }
 
 // ============================================================
-// Chamados
+// Fila — mostra o login atual (acesso, senha, 2fa)
 // ============================================================
-function prioClasse(p) {
-    if (p === "Alta") return "prio-alta";
-    if (p === "Baixa") return "prio-baixa";
-    return "prio-media";
-}
-function prioBadge(p) {
-    if (p === "Alta") return "alta";
-    if (p === "Baixa") return "baixa";
-    return "media";
-}
-
-let chamadoAtual = null;
+let loginAtual = null;
 
 function carregarFila() {
-    const abertos = chamadosPorStatus("aberto");
-    if (abertos.length > 0) {
-        chamadoAtual = abertos[0];
-        setText("fAcesso", chamadoAtual.acesso || "—");
-        setText("fSenha", chamadoAtual.senha || "—");
-        setText("f2fa", chamadoAtual.dois_fa || "—");
-        setText("fNumero", chamadoAtual.numero || "—");
-        setText("fData", chamadoAtual.data || "—");
-        setText("fSenhaBranca", chamadoAtual.senha_branca || "—");
-        setText("fNome", chamadoAtual.nome || "—");
-        setText("fRua", chamadoAtual.rua || "—");
+    if (cacheLogins.length > 0) {
+        loginAtual = cacheLogins[0];
+        setText("fAcesso", loginAtual.acesso || "—");
+        setText("fSenha", loginAtual.senha || "—");
+        setText("f2fa", loginAtual.dois_fa || "—");
     } else {
-        chamadoAtual = null;
+        loginAtual = null;
         setText("fAcesso", "—");
         setText("fSenha", "—");
         setText("f2fa", "—");
-        setText("fNumero", "—");
-        setText("fData", "—");
-        setText("fSenhaBranca", "—");
-        setText("fNome", "—");
-        setText("fRua", "—");
     }
+    // Campos sem origem de dados por enquanto (login só tem acesso/senha/2fa)
+    setText("fNumero", "—");
+    setText("fData", "—");
+    setText("fSenhaBranca", "—");
+    setText("fNome", "—");
+    setText("fRua", "—");
     atualizarBotoesFila();
 }
 
 function atualizarBotoesFila() {
-    const semFila = !chamadoAtual;
-    const cc = $("concluir");
-    if (cc) { cc.disabled = semFila; cc.textContent = semFila ? "Pronta" : "Concluir chamado"; }
+    const semFila = !loginAtual;
+    const pr = $("pronta");
+    const fb = $("filaFalha");
+    if (pr) pr.disabled = semFila;
+    if (fb) fb.disabled = semFila;
 }
 
-async function mudarStatusChamado(id, status) {
-    const { error } = await sb.from("chamados").update({ status: status }).eq("id", id);
-    if (error) { mostrarToast("Erro ao atualizar"); return; }
-    await recarregarChamados();
-    renderTudoChamados();
+// Move o login atual para outra tabela (prontos ou falha) e o tira da fila
+async function moverLogin(item, destino) {
+    const { error: e1 } = await sb.from(destino).insert({
+        acesso: item.acesso, senha: item.senha, dois_fa: item.dois_fa
+    });
+    if (e1) { mostrarToast("Erro ao mover o login"); return false; }
+    const { error: e2 } = await sb.from("login").delete().eq("id", item.id);
+    if (e2) { mostrarToast("Erro ao tirar da fila"); return false; }
+    return true;
+}
+
+async function marcarPronta() {
+    if (!loginAtual) return;
+    const ok = await moverLogin(loginAtual, "prontos");
+    if (!ok) return;
+    await Promise.all([recarregarLogins(), recarregarProntos()]);
     carregarFila();
+    renderLoginTudo();
+    mostrarToast("Login marcado como pronto");
 }
 
-async function concluirChamado() {
-    if (!chamadoAtual) return;
-    await mudarStatusChamado(chamadoAtual.id, "concluido");
-    mostrarToast("Chamado concluído");
+function abrirModalFalha() {
+    if (!loginAtual) return;
+    $("falhaModal").classList.remove("hidden");
+}
+function fecharModalFalha() {
+    $("falhaModal").classList.add("hidden");
+}
+async function confirmarFalhaLogin() {
+    fecharModalFalha();
+    if (!loginAtual) return;
+    const ok = await moverLogin(loginAtual, "falha");
+    if (!ok) return;
+    await Promise.all([recarregarLogins(), recarregarFalhas()]);
+    carregarFila();
+    renderLoginTudo();
+    mostrarToast("Login marcado como falha");
 }
 
-function atualizarStatsChamados() {
-    setText("stAbertos", String(chamadosPorStatus("aberto").length));
-    setText("stConcluidos", String(chamadosPorStatus("concluido").length));
-    setText("stCancelados", String(chamadosPorStatus("cancelado").length));
+// ============================================================
+// Aba Login — adicionar logins e ver Disponíveis / Prontos / Falha
+// ============================================================
+async function adicionarLogin(acesso, senha, dois_fa) {
+    const { error } = await sb.from("login").insert({ acesso: acesso, senha: senha, dois_fa: dois_fa });
+    if (error) { mostrarToast("Erro ao adicionar login"); return false; }
+    await recarregarLogins();
+    return true;
 }
 
-function renderListaChamados(status, ulId) {
+// Devolve um login de prontos/falha de volta para a fila
+async function devolverParaFila(origem, item) {
+    const { error: e1 } = await sb.from("login").insert({
+        acesso: item.acesso, senha: item.senha, dois_fa: item.dois_fa
+    });
+    if (e1) { mostrarToast("Erro ao devolver"); return; }
+    const { error: e2 } = await sb.from(origem).delete().eq("id", item.id);
+    if (e2) { mostrarToast("Erro ao remover"); return; }
+    await Promise.all([recarregarLogins(), origem === "prontos" ? recarregarProntos() : recarregarFalhas()]);
+    carregarFila();
+    renderLoginTudo();
+    mostrarToast("Login devolvido para a fila");
+}
+
+async function removerLogin(origem, id) {
+    const { error } = await sb.from(origem).delete().eq("id", id);
+    if (error) { mostrarToast("Erro ao remover"); return; }
+    if (origem === "login") await recarregarLogins();
+    else if (origem === "prontos") await recarregarProntos();
+    else await recarregarFalhas();
+    carregarFila();
+    renderLoginTudo();
+}
+
+function renderListaLogin(arr, ulId, origem) {
     const ul = $(ulId);
     if (!ul) return;
-    const itens = chamadosPorStatus(status);
     ul.innerHTML = "";
-    if (itens.length === 0) {
-        const vazio = document.createElement("li");
-        vazio.className = "conta-empty";
-        vazio.textContent = "Nenhum chamado aqui.";
-        ul.appendChild(vazio);
+    if (!arr || arr.length === 0) {
+        const v = document.createElement("li");
+        v.className = "conta-empty";
+        v.textContent = "Nada aqui ainda.";
+        ul.appendChild(v);
         return;
     }
-    itens.forEach(ch => {
+    arr.forEach(item => {
         const li = document.createElement("li");
         li.className = "conta-item";
         const info = document.createElement("div");
         info.className = "conta-info";
-        const tit = document.createElement("span");
-        tit.className = "conta-email";
-        tit.textContent = ch.titulo;
+        const ac = document.createElement("span");
+        ac.className = "conta-email";
+        ac.textContent = item.acesso || "—";
         const sub = document.createElement("span");
         sub.className = "conta-senha";
-        sub.textContent = [ch.cliente, ch.descricao].filter(Boolean).join(" · ") || "—";
-        info.appendChild(tit);
+        sub.textContent = [item.senha, item.dois_fa].filter(Boolean).join(" · ") || "—";
+        info.appendChild(ac);
         info.appendChild(sub);
-        const badge = document.createElement("span");
-        badge.className = "prio-badge " + prioBadge(ch.prioridade);
-        badge.textContent = ch.prioridade || "Média";
         li.appendChild(info);
-        li.appendChild(badge);
-        if (status !== "aberto") {
-            li.appendChild(botao("reopen-btn", "reabrir", () => mudarStatusChamado(ch.id, "aberto")));
+        if (origem !== "login") {
+            li.appendChild(botao("reopen-btn", "devolver", () => devolverParaFila(origem, item)));
         }
-        li.appendChild(botao("del-btn", "remover", () => removerChamado(ch.id)));
+        li.appendChild(botao("del-btn", "remover", () => removerLogin(origem, item.id)));
         ul.appendChild(li);
     });
 }
 
-function renderTudoChamados() {
-    renderListaChamados("aberto", "listaAbertos");
-    renderListaChamados("concluido", "listaConcluidos");
-    renderListaChamados("cancelado", "listaCancelados");
-    atualizarStatsChamados();
+function renderLoginTudo() {
+    renderListaLogin(cacheLogins, "listaLogins", "login");
+    renderListaLogin(cacheProntos, "listaProntos", "prontos");
+    renderListaLogin(cacheFalhas, "listaFalha", "falha");
+    setText("stDisponiveis", String(cacheLogins.length));
+    setText("stProntos", String(cacheProntos.length));
+    setText("stFalha", String(cacheFalhas.length));
 }
 
-async function removerChamado(id) {
-    const { error } = await sb.from("chamados").delete().eq("id", id);
-    if (error) { mostrarToast("Erro ao remover"); return; }
-    await recarregarChamados();
-    renderTudoChamados();
-    carregarFila();
-}
-
-async function adicionarChamado(titulo, cliente, prioridade, descricao) {
-    const { error } = await sb.from("chamados").insert({
-        titulo: titulo, cliente: cliente, prioridade: prioridade, descricao: descricao, status: "aberto"
+function mostrarSubLogin(sub) {
+    document.querySelectorAll("[data-lsub]").forEach(b => {
+        b.classList.toggle("active", b.getAttribute("data-lsub") === sub);
     });
-    if (error) { mostrarToast("Erro ao abrir chamado"); return false; }
-    await recarregarChamados();
-    return true;
-}
-
-function normalizarPrio(p) {
-    const x = (p || "").toLowerCase();
-    if (x.indexOf("alta") === 0 || x.indexOf("alt") === 0) return "Alta";
-    if (x.indexOf("baix") === 0) return "Baixa";
-    return "Média";
-}
-
-function parseChamados(texto) {
-    const out = [];
-    let atual = null;
-    const novo = () => ({ titulo: "", cliente: "", prioridade: "Média", descricao: "", status: "aberto" });
-    const guardar = () => { if (atual && atual.titulo) out.push(atual); atual = null; };
-    texto.split(/\r?\n/).forEach(raw => {
-        const linha = raw.trim();
-        if (!linha) return;
-        let m;
-        if ((m = linha.match(/^t[íi]tulo\s*:\s*(.*)$/i))) { guardar(); atual = novo(); atual.titulo = m[1].trim(); }
-        else if ((m = linha.match(/^cliente\s*:\s*(.*)$/i))) { if (!atual) atual = novo(); atual.cliente = m[1].trim(); }
-        else if ((m = linha.match(/^prioridade\s*:\s*(.*)$/i))) { if (!atual) atual = novo(); atual.prioridade = normalizarPrio(m[1].trim()); }
-        else if ((m = linha.match(/^descri[çc][ãa]o\s*:\s*(.*)$/i))) { if (!atual) atual = novo(); atual.descricao = m[1].trim(); }
-    });
-    guardar();
-    return out;
-}
-
-async function importarChamados(texto) {
-    const novos = parseChamados(texto);
-    if (novos.length === 0) return 0;
-    const { error } = await sb.from("chamados").insert(novos);
-    if (error) { mostrarToast("Erro ao importar"); return -1; }
-    await recarregarChamados();
-    return novos.length;
+    $("lsubDisponiveis").classList.toggle("hidden", sub !== "disponiveis");
+    $("lsubProntos").classList.toggle("hidden", sub !== "prontos");
+    $("lsubFalha").classList.toggle("hidden", sub !== "falha");
+    renderLoginTudo();
 }
 
 // ============================================================
-// Usuários e login
+// Usuários e login (autenticação)
 // ============================================================
 const USUARIOS_PADRAO = [
     { usuario: "admin", senha: "1234", admin: true }
@@ -297,7 +302,7 @@ function ehAdmin() { return sessionStorage.getItem("cc_admin") === "1"; }
 
 function aplicarPermissoes() {
     const adm = ehAdmin();
-    $("tabChamados").classList.toggle("hidden", !adm);
+    $("tabLogin").classList.toggle("hidden", !adm);
     $("tabUsuarios").classList.toggle("hidden", !adm);
 }
 
@@ -308,26 +313,16 @@ function atualizarUsuarioUI() {
     setText("userAvatar", (nome[0] || "?").toUpperCase());
 }
 
-function mostrarSubChamados(sub) {
-    document.querySelectorAll(".subtab-btn").forEach(b => {
-        b.classList.toggle("active", b.getAttribute("data-sub") === sub);
-    });
-    $("subAbertos").classList.toggle("hidden", sub !== "abertos");
-    $("subConcluidos").classList.toggle("hidden", sub !== "concluidos");
-    $("subCancelados").classList.toggle("hidden", sub !== "cancelados");
-    renderTudoChamados();
-}
-
 function mostrarAba(view) {
-    if ((view === "chamados" || view === "usuarios") && !ehAdmin()) view = "fila";
+    if ((view === "login" || view === "usuarios") && !ehAdmin()) view = "fila";
     document.querySelectorAll(".nav-item").forEach(t => {
         t.classList.toggle("active", t.getAttribute("data-view") === view);
     });
     $("viewFila").classList.toggle("hidden", view !== "fila");
-    $("viewChamados").classList.toggle("hidden", view !== "chamados");
+    $("viewLogin").classList.toggle("hidden", view !== "login");
     $("viewUsuarios").classList.toggle("hidden", view !== "usuarios");
     if (view === "fila") carregarFila();
-    if (view === "chamados") mostrarSubChamados("abertos");
+    if (view === "login") mostrarSubLogin("disponiveis");
     if (view === "usuarios") renderUsuarios();
 }
 
@@ -381,11 +376,16 @@ $("sair").addEventListener("click", sair);
 document.querySelectorAll(".nav-item").forEach(t => {
     t.addEventListener("click", () => mostrarAba(t.getAttribute("data-view")));
 });
-document.querySelectorAll(".subtab-btn").forEach(b => {
-    b.addEventListener("click", () => mostrarSubChamados(b.getAttribute("data-sub")));
+
+document.querySelectorAll("[data-lsub]").forEach(b => {
+    b.addEventListener("click", () => mostrarSubLogin(b.getAttribute("data-lsub")));
 });
 
-$("concluir").addEventListener("click", concluirChamado);
+$("pronta").addEventListener("click", marcarPronta);
+$("filaFalha").addEventListener("click", abrirModalFalha);
+$("confirmarFalha").addEventListener("click", confirmarFalhaLogin);
+$("recusarFalha").addEventListener("click", fecharModalFalha);
+$("falhaModal").addEventListener("click", (e) => { if (e.target === $("falhaModal")) fecharModalFalha(); });
 
 document.querySelectorAll(".copy-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -399,37 +399,29 @@ document.querySelectorAll(".copy-btn").forEach(btn => {
     });
 });
 
-$("formChamado").addEventListener("submit", async (e) => {
+$("formLogin").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const titulo = $("chTitulo").value.trim();
-    if (!titulo) return;
-    const ok = await adicionarChamado(titulo, $("chCliente").value.trim(), $("chPrioridade").value, $("chDescricao").value.trim());
+    const acesso = $("lgAcesso").value.trim();
+    if (!acesso) return;
+    const ok = await adicionarLogin(acesso, $("lgSenha").value.trim(), $("lg2fa").value.trim());
     if (!ok) return;
     e.target.reset();
-    $("chTitulo").focus();
-    renderTudoChamados();
+    $("lgAcesso").focus();
     carregarFila();
-    mostrarToast("Chamado aberto");
+    renderLoginTudo();
+    mostrarToast("Login adicionado");
 });
 
-$("bulkAddChamados").addEventListener("click", async () => {
-    const n = await importarChamados($("bulkChamados").value);
-    if (n <= 0) { if (n === 0) mostrarToast("Nenhum chamado reconhecido"); return; }
-    $("bulkChamados").value = "";
-    renderTudoChamados();
-    carregarFila();
-    mostrarToast(n === 1 ? "1 chamado importado" : n + " chamados importados");
-});
-
-$("limparAbertos").addEventListener("click", async () => {
-    if (chamadosPorStatus("aberto").length === 0) return;
-    if (!confirm("Remover todos os chamados abertos?")) return;
-    const { error } = await sb.from("chamados").delete().eq("status", "aberto");
+$("limparLogins").addEventListener("click", async () => {
+    if (cacheLogins.length === 0) return;
+    if (!confirm("Remover todos os logins disponíveis?")) return;
+    const ids = cacheLogins.map(l => l.id);
+    const { error } = await sb.from("login").delete().in("id", ids);
     if (error) { mostrarToast("Erro ao limpar"); return; }
-    await recarregarChamados();
-    renderTudoChamados();
+    await recarregarLogins();
     carregarFila();
-    mostrarToast("Chamados abertos removidos");
+    renderLoginTudo();
+    mostrarToast("Logins removidos");
 });
 
 $("formUsuario").addEventListener("submit", async (e) => {

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Chamados</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Tela de login -->
+    <div class="login-screen" id="loginScreen">
+        <form class="login-box" id="loginForm" autocomplete="off">
+            <h1>Central de Chamados</h1>
+            <p class="login-sub">Acesse para atender os chamados</p>
+            <div class="input-group">
+                <label for="user">Usuário</label>
+                <input type="text" id="user" autocomplete="username" required>
+            </div>
+            <div class="input-group">
+                <label for="pass">Senha</label>
+                <input type="password" id="pass" autocomplete="current-password" required>
+            </div>
+            <p class="login-error" id="loginError"></p>
+            <button type="submit" class="login-btn">Entrar</button>
+            <p class="login-hint">Demo: <strong>admin</strong> / <strong>1234</strong></p>
+        </form>
+    </div>
+
+    <div class="app hidden" id="app">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <span class="brand-logo">🎧</span>
+                <span class="brand-name">Chamados</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="fila">
+                    <span class="nav-icon">📥</span>
+                    <span>Fila</span>
+                </button>
+                <button class="nav-item hidden" id="tabChamados" data-view="chamados">
+                    <span class="nav-icon">🎫</span>
+                    <span>Chamados</span>
+                </button>
+                <button class="nav-item hidden" id="tabClientes" data-view="clientes">
+                    <span class="nav-icon">👤</span>
+                    <span>Clientes</span>
+                </button>
+                <button class="nav-item hidden" id="tabUsuarios" data-view="usuarios">
+                    <span class="nav-icon">👥</span>
+                    <span>Usuários</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-chip">
+                    <span class="user-avatar" id="userAvatar">A</span>
+                    <div class="user-meta">
+                        <span class="user-name" id="userName">admin</span>
+                        <span class="user-role" id="userRole">Administrador</span>
+                    </div>
+                </div>
+                <button class="logout-btn" id="sair">Sair</button>
+            </div>
+        </aside>
+
+        <main class="content">
+        <section id="viewFila">
+            <div class="content-head">
+                <div>
+                    <h1 class="content-title">Fila de atendimento</h1>
+                    <p class="content-sub">Atenda um chamado por vez</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="row c-blue">
+                    <span class="label">Título</span>
+                    <span class="value" id="fTitulo">—</span>
+                    <button class="copy-btn" data-copy="fTitulo" title="Copiar">copiar</button>
+                </div>
+                <div class="row">
+                    <span class="label">Descrição</span>
+                    <span class="value" id="fDescricao">—</span>
+                    <button class="copy-btn" data-copy="fDescricao" title="Copiar">copiar</button>
+                </div>
+                <div class="row c-green">
+                    <span class="label">Cliente</span>
+                    <span class="value" id="fCliente">—</span>
+                    <button class="copy-btn" data-copy="fCliente" title="Copiar">copiar</button>
+                </div>
+                <div class="row">
+                    <span class="label">Prioridade</span>
+                    <span class="value" id="fPrioridade">—</span>
+                    <button class="copy-btn" data-copy="fPrioridade" title="Copiar">copiar</button>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="generate-btn" id="concluir">Concluir chamado</button>
+                <button class="danger-btn" id="naoResolvido">Não resolvido</button>
+            </div>
+        </section>
+
+        <section id="viewChamados" class="hidden">
+            <div class="content-head">
+                <div>
+                    <h1 class="content-title">Chamados</h1>
+                    <p class="content-sub">Abra e acompanhe os chamados</p>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-label">Abertos</span>
+                    <span class="stat-value" id="stAbertos">0</span>
+                    <span class="stat-note">na fila</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Concluídos</span>
+                    <span class="stat-value" id="stConcluidos">0</span>
+                    <span class="stat-note">resolvidos</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Cancelados</span>
+                    <span class="stat-value" id="stCancelados">0</span>
+                    <span class="stat-note">não resolvidos</span>
+                </div>
+            </div>
+
+            <div class="subtabs">
+                <button class="subtab-btn active" data-sub="abertos">Abertos</button>
+                <button class="subtab-btn" data-sub="concluidos">Concluídos</button>
+                <button class="subtab-btn" data-sub="cancelados">Cancelados</button>
+            </div>
+
+            <div id="subAbertos">
+                <div class="panel admin-panel">
+                    <div class="admin-card-head">
+                        <h2 class="admin-title">Abrir chamado</h2>
+                    </div>
+                    <form class="admin-form" id="formChamado" autocomplete="off">
+                        <input type="text" id="chTitulo" placeholder="Título" required>
+                        <input type="text" id="chCliente" placeholder="Cliente">
+                        <select id="chPrioridade" class="admin-select">
+                            <option value="Baixa">Baixa</option>
+                            <option value="Média" selected>Média</option>
+                            <option value="Alta">Alta</option>
+                        </select>
+                        <input type="text" id="chDescricao" placeholder="Descrição">
+                        <button type="submit" class="add-btn">Abrir</button>
+                    </form>
+                    <p class="admin-hint">Os chamados abertos entram na Fila de atendimento.</p>
+                </div>
+
+                <div class="panel admin-panel">
+                    <div class="admin-card-head">
+                        <h2 class="admin-title">Importar em massa</h2>
+                    </div>
+                    <textarea id="bulkChamados" class="bulk-text" rows="8" placeholder="TITULO: Sistema fora do ar&#10;CLIENTE: Loja Azul&#10;PRIORIDADE: Alta&#10;DESCRICAO: Não consigo acessar&#10;&#10;TITULO: Dúvida no boleto&#10;CLIENTE: João&#10;PRIORIDADE: Baixa"></textarea>
+                    <div class="bulk-actions">
+                        <button class="add-btn" id="bulkAddChamados">Importar</button>
+                    </div>
+                    <p class="admin-hint">Blocos TITULO / CLIENTE / PRIORIDADE / DESCRICAO separados por linha em branco.</p>
+                </div>
+
+                <div class="panel admin-panel">
+                    <div class="admin-card-head">
+                        <h2 class="admin-title">Chamados abertos</h2>
+                        <button class="clear-btn" id="limparAbertos">Limpar tudo</button>
+                    </div>
+                    <ul class="conta-list" id="listaAbertos"></ul>
+                </div>
+            </div>
+
+            <div id="subConcluidos" class="hidden">
+                <div class="panel admin-panel">
+                    <div class="admin-card-head">
+                        <h2 class="admin-title">Chamados concluídos</h2>
+                    </div>
+                    <ul class="conta-list" id="listaConcluidos"></ul>
+                </div>
+            </div>
+
+            <div id="subCancelados" class="hidden">
+                <div class="panel admin-panel">
+                    <div class="admin-card-head">
+                        <h2 class="admin-title">Chamados cancelados</h2>
+                    </div>
+                    <ul class="conta-list" id="listaCancelados"></ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="viewClientes" class="hidden">
+            <div class="content-head">
+                <div>
+                    <h1 class="content-title">Clientes</h1>
+                    <p class="content-sub">Cadastro de clientes (endereço por CEP)</p>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-label">Clientes</span>
+                    <span class="stat-value" id="stClientes">0</span>
+                    <span class="stat-note">cadastrados</span>
+                </div>
+            </div>
+
+            <div class="panel admin-panel">
+                <div class="admin-card-head">
+                    <h2 class="admin-title">Novo cliente</h2>
+                </div>
+                <form class="admin-form" id="formCliente" autocomplete="off">
+                    <input type="text" id="clNome" placeholder="Nome" required>
+                    <input type="text" id="clEmail" placeholder="E-mail">
+                    <input type="text" id="clTelefone" placeholder="Telefone">
+                    <input type="text" id="clCep" placeholder="CEP">
+                    <button type="button" class="add-btn" id="buscarCep">Buscar CEP</button>
+                    <input type="text" id="clEndereco" placeholder="Endereço (preenchido pelo CEP)">
+                    <button type="submit" class="add-btn">Salvar cliente</button>
+                </form>
+                <p class="admin-hint">Digite o CEP e clique em "Buscar CEP" para preencher o endereço (via ViaCEP).</p>
+            </div>
+
+            <div class="panel admin-panel">
+                <div class="admin-card-head">
+                    <h2 class="admin-title">Clientes cadastrados</h2>
+                    <button class="clear-btn" id="limparClientes">Limpar tudo</button>
+                </div>
+                <ul class="conta-list" id="listaClientes"></ul>
+            </div>
+        </section>
+
+        <section id="viewUsuarios" class="hidden">
+            <div class="content-head">
+                <div>
+                    <h1 class="content-title">Usuários</h1>
+                    <p class="content-sub">Crie acessos para os atendentes</p>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-label">Usuários criados</span>
+                    <span class="stat-value" id="statUsuarios">0</span>
+                    <span class="stat-note">além do admin padrão</span>
+                </div>
+            </div>
+
+            <div class="panel admin-panel">
+                <div class="admin-card-head">
+                    <h2 class="admin-title">Criar acesso</h2>
+                </div>
+                <form class="admin-form" id="formUsuario" autocomplete="off">
+                    <input type="text" id="novoUsuario" placeholder="usuário" required>
+                    <input type="text" id="novaSenhaUser" placeholder="senha" required>
+                    <label class="check-label"><input type="checkbox" id="novoUserAdmin"> Admin</label>
+                    <button type="submit" class="add-btn">Criar</button>
+                </form>
+                <p class="admin-hint">Atendentes comuns só veem a Fila. Marque "Admin" para acesso total.</p>
+            </div>
+
+            <div class="panel admin-panel">
+                <div class="admin-card-head">
+                    <h2 class="admin-title">Usuários</h2>
+                </div>
+                <ul class="conta-list" id="usuarioList"></ul>
+            </div>
+        </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+</body>
+</html>

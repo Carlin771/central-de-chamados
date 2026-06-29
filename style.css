@@ -1,0 +1,1055 @@
+:root {
+    --bg-1: #0f172a;
+    --bg-2: #1e1b4b;
+    --panel-bg: rgba(30, 41, 59, 0.7);
+    --border: rgba(148, 163, 184, 0.15);
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #6366f1;
+    --accent-2: #8b5cf6;
+    --green: #22c55e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 460px;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.header h1 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 3px 12px;
+    font-size: 0.72rem;
+    color: #fde68a;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 999px;
+}
+
+/* Painel único compacto */
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.label {
+    flex: 0 0 78px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+}
+
+.value {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 500;
+    word-break: break-all;
+    font-variant-numeric: tabular-nums;
+    user-select: all;
+}
+
+/* Cores por grupo de campo */
+.c-green .label,
+.c-green .value {
+    color: #4ade80;
+}
+
+.c-orange .label,
+.c-orange .value {
+    color: #fb923c;
+}
+
+.c-blue .label,
+.c-blue .value {
+    color: #60a5fa;
+}
+
+.copy-btn {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 6px;
+    padding: 3px 9px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.copy-btn:hover {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.copy-btn.copied {
+    color: #fff;
+    background: var(--green);
+    border-color: var(--green);
+}
+
+/* Ações */
+.actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.generate-btn {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border: none;
+    border-radius: 10px;
+    padding: 11px 18px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.generate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(34, 197, 94, 0.5);
+}
+
+.generate-btn:active {
+    transform: translateY(0);
+}
+
+.generate-btn:disabled {
+    background: #475569;
+    color: #cbd5e1;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+    opacity: 1;
+}
+
+.generate-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.copy-all-btn {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 16px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.copy-all-btn:hover {
+    border-color: var(--accent);
+    color: #fff;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    margin-top: 14px;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 10px 20px;
+    border-radius: 9px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* ===== Tela de login ===== */
+.hidden {
+    display: none !important;
+}
+
+.login-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 500;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 340px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px 26px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+    text-align: center;
+}
+
+.login-box h1 {
+    font-size: 1.9rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.login-sub {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin: 4px 0 20px;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 14px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.input-group input:focus {
+    border-color: var(--accent);
+}
+
+.login-error {
+    color: #f87171;
+    font-size: 0.8rem;
+    min-height: 1.1em;
+    margin-bottom: 8px;
+}
+
+.login-btn {
+    width: 100%;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border: none;
+    border-radius: 10px;
+    padding: 11px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(99, 102, 241, 0.5);
+}
+
+.login-hint {
+    margin-top: 16px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
+/* botão Sair */
+.logout-btn {
+    display: inline-block;
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.logout-btn:hover {
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* ===== Abas (Gerador / Admin) ===== */
+.tabs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.tab-btn {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 7px 18px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+    color: #fff;
+}
+
+.tab-btn.active {
+    color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+}
+
+/* ===== Aba Admin ===== */
+.admin-panel {
+    padding: 18px;
+}
+
+.admin-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
+.admin-form {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.admin-form input {
+    flex: 1;
+    min-width: 130px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 11px;
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.admin-form input:focus {
+    border-color: var(--accent);
+}
+
+.add-btn {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border: none;
+    border-radius: 9px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.add-btn:hover {
+    transform: translateY(-1px);
+}
+
+.admin-hint {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+}
+
+.conta-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.conta-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 8px 12px;
+}
+
+.conta-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.conta-email {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4ade80;
+    word-break: break-all;
+}
+
+.conta-senha {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    word-break: break-all;
+}
+
+.conta-empty {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 12px;
+}
+
+.del-btn {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: 7px;
+    padding: 5px 11px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.del-btn:hover {
+    color: #fff;
+    background: #ef4444;
+    border-color: #ef4444;
+}
+
+/* ============ Layout dashboard (sidebar + conteúdo) ============ */
+.app {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    background: rgba(15, 23, 42, 0.88);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 14px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px 20px;
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.brand-logo {
+    font-size: 1.35rem;
+}
+
+.brand-name {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    text-align: left;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: transparent;
+    border: none;
+    border-radius: 9px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.nav-item:hover {
+    color: #fff;
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.nav-item.active {
+    color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+}
+
+.nav-icon {
+    font-size: 1.05rem;
+}
+
+.sidebar-footer {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.user-avatar {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.user-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.user-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+}
+
+.sidebar-footer .logout-btn {
+    width: 100%;
+    margin-top: 0;
+    padding: 8px;
+    text-align: center;
+}
+
+/* Conteúdo */
+.content {
+    flex: 1;
+    min-width: 0;
+    padding: 28px 32px;
+}
+
+.content-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.content-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.content-sub {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-top: 3px;
+}
+
+#viewGerador .panel,
+#viewGerador .actions {
+    max-width: 480px;
+}
+
+/* Cards de status (Admin) */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.stat-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+}
+
+.stat-value {
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.stat-note {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+}
+
+/* Cabeçalho dos cards do Admin */
+#viewAdmin .panel {
+    margin-bottom: 16px;
+}
+
+.admin-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.admin-title {
+    margin-bottom: 0;
+}
+
+.clear-btn {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: 8px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.clear-btn:hover {
+    color: #fff;
+    background: #ef4444;
+    border-color: #ef4444;
+}
+
+/* Lista de contas em cards */
+.conta-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.conta-empty {
+    grid-column: 1 / -1;
+}
+
+/* ============ Responsivo ============ */
+@media (max-width: 760px) {
+    .app {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-brand {
+        padding: 0;
+        margin-right: auto;
+    }
+
+    .sidebar-nav {
+        flex-direction: row;
+        flex: 0 1 auto;
+        gap: 6px;
+    }
+
+    .sidebar-footer {
+        border-top: none;
+        padding-top: 0;
+        flex-direction: row;
+        align-items: center;
+        flex: 1 1 100%;
+        justify-content: space-between;
+    }
+
+    .sidebar-footer .logout-btn {
+        width: auto;
+    }
+
+    .content {
+        padding: 18px 16px;
+    }
+}
+
+/* ===== Sub-abas (Contas cadastradas / prontas) ===== */
+.subtabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.subtab-btn {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.subtab-btn:hover {
+    color: #fff;
+}
+
+.subtab-btn.active {
+    color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+}
+
+/* 2FA na lista de contas cadastradas */
+.conta-2fa {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    word-break: break-all;
+}
+
+/* Contas prontas */
+.prontas-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+}
+
+.pronta-card {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pronta-email {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #4ade80;
+    word-break: break-all;
+}
+
+.pronta-linha {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    word-break: break-all;
+}
+
+.pronta-card .copy-btn {
+    margin-top: 8px;
+    align-self: flex-start;
+}
+
+/* ===== Adicionar em massa ===== */
+.bulk-text {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.15s ease;
+}
+
+.bulk-text:focus {
+    border-color: var(--accent);
+}
+
+.bulk-actions {
+    margin-top: 10px;
+}
+
+/* ===== Sub-abas de Cartão ===== */
+.csub-btn {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.csub-btn:hover {
+    color: #fff;
+}
+
+.csub-btn.active {
+    color: #fff;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+}
+
+/* ===== Bolinha vermelha (trocar Gmail / marcar falha) ===== */
+.fail-btn {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.fail-btn:hover {
+    background: #dc2626;
+    transform: scale(1.15);
+}
+
+.fail-btn:disabled {
+    background: #6b7280;
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ===== Aba Usuários ===== */
+.check-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.check-label input {
+    cursor: pointer;
+}
+
+.user-tag {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    background: rgba(148, 163, 184, 0.12);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+}
+
+/* ===== Central de Chamados ===== */
+#viewFila .panel,
+#viewFila .actions {
+    max-width: 520px;
+}
+
+.danger-btn {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    border: none;
+    border-radius: 10px;
+    padding: 11px 18px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.danger-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(239, 68, 68, 0.5);
+}
+
+.danger-btn:disabled {
+    background: #475569;
+    color: #cbd5e1;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.admin-select {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 11px;
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.admin-select:focus {
+    border-color: var(--accent);
+}
+
+/* prioridade no valor da fila */
+.prio-alta { color: #f87171; }
+.prio-media { color: #fb923c; }
+.prio-baixa { color: #4ade80; }
+
+/* badge de prioridade nas listas */
+.prio-badge {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 3px 9px;
+    color: #fff;
+}
+
+.prio-badge.alta { background: #ef4444; }
+.prio-badge.media { background: #f59e0b; }
+.prio-badge.baixa { background: #22c55e; }
+
+.reopen-btn {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 7px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.reopen-btn:hover {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+}

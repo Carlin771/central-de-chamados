@@ -162,7 +162,11 @@ function carregarFila() {
 function atualizarBotoesFila() {
     const pr = $("pronta");
     const fb = $("filaFalha");
-    if (pr) pr.disabled = (!loginAtual && !numeroAtual);
+    const completo = !!(loginAtual && numeroAtual);
+    if (pr) {
+        pr.disabled = !completo;
+        pr.textContent = completo ? "Pronta" : "Aguarde reposição";
+    }
     if (fb) fb.disabled = !loginAtual;
 }
 
@@ -189,7 +193,7 @@ async function moverNumero(item, destino) {
 }
 
 async function marcarPronta() {
-    if (!loginAtual && !numeroAtual) return;
+    if (!loginAtual || !numeroAtual) return;
     let mudou = false;
     if (loginAtual && await moverLogin(loginAtual, "prontos")) mudou = true;
     if (numeroAtual && await moverNumero(numeroAtual, "usadas")) mudou = true;

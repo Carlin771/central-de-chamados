@@ -445,6 +445,48 @@ function mostrarSubNumero(sub) {
 }
 
 // ============================================================
+// Dashboard — métricas e informações (admin)
+// ============================================================
+function renderDashboard() {
+    const ld = cacheLogins.length;
+    const nd = cacheNumeros.length;
+    const prontos = cacheProntos.length;
+    const falhas = cacheFalhas.length;
+    const usados = cacheUsadas.length;
+    const atender = Math.min(ld, nd);
+    const baseTaxa = prontos + falhas;
+    const taxa = baseTaxa > 0 ? Math.round((prontos / baseTaxa) * 100) : 0;
+    const usuarios = USUARIOS_PADRAO.length + cacheUsuarios.length;
+
+    setText("dashLoginsDisp", String(ld));
+    setText("dashNumerosDisp", String(nd));
+    setText("dashProntosAtender", String(atender));
+    setText("dashConcluidos", String(prontos));
+    setText("dashUsados", String(usados));
+    setText("dashFalhas", String(falhas));
+    setText("dashTaxa", baseTaxa > 0 ? taxa + "%" : "—");
+    setText("dashUsuarios", String(usuarios));
+
+    let status;
+    if (ld === 0 && nd === 0) status = "Sem logins e sem números — aguardando reposição.";
+    else if (ld === 0) status = "Sem logins disponíveis — aguardando reposição.";
+    else if (nd === 0) status = "Sem números disponíveis — aguardando reposição.";
+    else status = "Operação normal — dá para atender " + atender + (atender === 1 ? " vez." : " vezes.");
+    setText("dashStatus", status);
+
+    setText("dashProxLogin", ld > 0 ? (cacheLogins[0].acesso || "—") : "—");
+    setText("dashProxNumero", nd > 0 ? (cacheNumeros[0].numero || "—") : "—");
+    setText("dashTotalLogins", String(ld + prontos + falhas));
+    setText("dashTotalNumeros", String(nd + usados));
+}
+
+async function atualizarDashboard() {
+    await carregarTudo();
+    carregarFila();
+    renderDashboard();
+}
+
+// ============================================================
 // Usuários e login (autenticação)
 // ============================================================
 const USUARIOS_PADRAO = [
@@ -510,6 +552,7 @@ function ehAdmin() { return sessionStorage.getItem("cc_admin") === "1"; }
 
 function aplicarPermissoes() {
     const adm = ehAdmin();
+    $("tabDashboard").classList.toggle("hidden", !adm);
     $("tabLogin").classList.toggle("hidden", !adm);
     $("tabNumero").classList.toggle("hidden", !adm);
     $("tabUsuarios").classList.toggle("hidden", !adm);
@@ -523,14 +566,16 @@ function atualizarUsuarioUI() {
 }
 
 function mostrarAba(view) {
-    if ((view === "login" || view === "numero" || view === "usuarios") && !ehAdmin()) view = "fila";
+    if ((view === "dashboard" || view === "login" || view === "numero" || view === "usuarios") && !ehAdmin()) view = "fila";
     document.querySelectorAll(".nav-item").forEach(t => {
         t.classList.toggle("active", t.getAttribute("data-view") === view);
     });
+    $("viewDashboard").classList.toggle("hidden", view !== "dashboard");
     $("viewFila").classList.toggle("hidden", view !== "fila");
     $("viewLogin").classList.toggle("hidden", view !== "login");
     $("viewNumero").classList.toggle("hidden", view !== "numero");
     $("viewUsuarios").classList.toggle("hidden", view !== "usuarios");
+    if (view === "dashboard") atualizarDashboard();
     if (view === "fila") carregarFila();
     if (view === "login") mostrarSubLogin("disponiveis");
     if (view === "numero") mostrarSubNumero("disponiveis");
@@ -598,6 +643,7 @@ document.querySelectorAll("[data-nsub]").forEach(b => {
 
 $("pronta").addEventListener("click", marcarPronta);
 $("filaFalha").addEventListener("click", abrirModalFalha);
+$("dashRefresh").addEventListener("click", atualizarDashboard);
 $("confirmarFalha").addEventListener("click", confirmarFalhaLogin);
 $("recusarFalha").addEventListener("click", fecharModalFalha);
 $("falhaModal").addEventListener("click", (e) => { if (e.target === $("falhaModal")) fecharModalFalha(); });

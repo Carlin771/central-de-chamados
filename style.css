@@ -1149,3 +1149,34 @@ body {
     border-color: var(--accent);
     color: #fff;
 }
+
+/* ===== Dashboard — painel de informações ===== */
+.dash-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.dash-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+.dash-info-row:last-child {
+    border-bottom: none;
+}
+
+.dash-info-row .k {
+    color: var(--text-dim);
+    flex-shrink: 0;
+}
+
+.dash-info-row .v {
+    font-weight: 600;
+    text-align: right;
+    word-break: break-all;
+}

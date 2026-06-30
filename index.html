@@ -34,6 +34,10 @@
             </div>
 
             <nav class="sidebar-nav">
+                <button class="nav-item hidden" id="tabDashboard" data-view="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </button>
                 <button class="nav-item active" data-view="fila">
                     <span class="nav-icon">📥</span>
                     <span>Fila</span>
@@ -65,6 +69,87 @@
         </aside>
 
         <main class="content">
+        <section id="viewDashboard" class="hidden">
+            <div class="content-head">
+                <div>
+                    <h1 class="content-title">Dashboard</h1>
+                    <p class="content-sub">Visão geral da operação</p>
+                </div>
+                <button class="copy-all-btn" id="dashRefresh">Atualizar</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-label">Logins disponíveis</span>
+                    <span class="stat-value" id="dashLoginsDisp">0</span>
+                    <span class="stat-note">na fila</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Números disponíveis</span>
+                    <span class="stat-value" id="dashNumerosDisp">0</span>
+                    <span class="stat-note">na fila</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Prontos p/ atender</span>
+                    <span class="stat-value" id="dashProntosAtender">0</span>
+                    <span class="stat-note">pares login + número</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Concluídos</span>
+                    <span class="stat-value" id="dashConcluidos">0</span>
+                    <span class="stat-note">logins prontos</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Números usados</span>
+                    <span class="stat-value" id="dashUsados">0</span>
+                    <span class="stat-note">finalizados</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Falhas</span>
+                    <span class="stat-value" id="dashFalhas">0</span>
+                    <span class="stat-note">logins com falha</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Taxa de sucesso</span>
+                    <span class="stat-value" id="dashTaxa">—</span>
+                    <span class="stat-note">prontos vs falhas</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Usuários</span>
+                    <span class="stat-value" id="dashUsuarios">0</span>
+                    <span class="stat-note">com acesso</span>
+                </div>
+            </div>
+
+            <div class="panel admin-panel">
+                <div class="admin-card-head">
+                    <h2 class="admin-title">Informações</h2>
+                </div>
+                <div class="dash-info">
+                    <div class="dash-info-row">
+                        <span class="k">Status da operação</span>
+                        <span class="v" id="dashStatus">—</span>
+                    </div>
+                    <div class="dash-info-row">
+                        <span class="k">Próximo login na fila</span>
+                        <span class="v" id="dashProxLogin">—</span>
+                    </div>
+                    <div class="dash-info-row">
+                        <span class="k">Próximo número na fila</span>
+                        <span class="v" id="dashProxNumero">—</span>
+                    </div>
+                    <div class="dash-info-row">
+                        <span class="k">Total de logins (todos)</span>
+                        <span class="v" id="dashTotalLogins">0</span>
+                    </div>
+                    <div class="dash-info-row">
+                        <span class="k">Total de números (todos)</span>
+                        <span class="v" id="dashTotalNumeros">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="viewFila">
             <div class="panel">
                 <div class="row c-green">

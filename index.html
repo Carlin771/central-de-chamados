@@ -159,6 +159,17 @@
 
                 <div class="panel admin-panel">
                     <div class="admin-card-head">
+                        <h2 class="admin-title">Importar em massa</h2>
+                    </div>
+                    <textarea id="bulkLogins" class="bulk-text" rows="9" placeholder="acesso&#10;senha&#10;2fa&#10;acesso&#10;senha&#10;2fa"></textarea>
+                    <div class="bulk-actions">
+                        <button class="add-btn" id="bulkAddLogins">Importar</button>
+                    </div>
+                    <p class="admin-hint">3 linhas por login, nesta ordem: acesso, senha, 2fa. Cole vários seguidos para adicionar de uma vez.</p>
+                </div>
+
+                <div class="panel admin-panel">
+                    <div class="admin-card-head">
                         <h2 class="admin-title">Logins disponíveis</h2>
                         <button class="clear-btn" id="limparLogins">Limpar tudo</button>
                     </div>

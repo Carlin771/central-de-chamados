@@ -160,6 +160,31 @@ async function adicionarLogin(acesso, senha, dois_fa) {
     return true;
 }
 
+// Importação em massa: 3 linhas por login, na ordem acesso, senha, 2fa
+function parseLogins(texto) {
+    const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    const out = [];
+    for (let i = 0; i < linhas.length; i += 3) {
+        const acesso = linhas[i];
+        if (!acesso) continue;
+        out.push({
+            acesso: acesso,
+            senha: linhas[i + 1] || "",
+            dois_fa: linhas[i + 2] || ""
+        });
+    }
+    return out;
+}
+
+async function importarLogins(texto) {
+    const novos = parseLogins(texto);
+    if (novos.length === 0) return 0;
+    const { error } = await sb.from("login").insert(novos);
+    if (error) { mostrarToast("Erro ao importar"); return -1; }
+    await recarregarLogins();
+    return novos.length;
+}
+
 // Devolve um login de prontos/falha de volta para a fila
 async function devolverParaFila(origem, item) {
     const { error: e1 } = await sb.from("login").insert({
@@ -410,6 +435,15 @@ $("formLogin").addEventListener("submit", async (e) => {
     carregarFila();
     renderLoginTudo();
     mostrarToast("Login adicionado");
+});
+
+$("bulkAddLogins").addEventListener("click", async () => {
+    const n = await importarLogins($("bulkLogins").value);
+    if (n <= 0) { if (n === 0) mostrarToast("Nenhum login reconhecido"); return; }
+    $("bulkLogins").value = "";
+    carregarFila();
+    renderLoginTudo();
+    mostrarToast(n === 1 ? "1 login importado" : n + " logins importados");
 });
 
 $("limparLogins").addEventListener("click", async () => {

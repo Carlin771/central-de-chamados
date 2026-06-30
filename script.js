@@ -93,10 +93,30 @@ async function carregarTudo() {
 }
 
 // ============================================================
+// Gerador de identidade fictícia (nome completo + rua comum no Brasil)
+// ============================================================
+const NOMES_M = ["José", "João", "Antônio", "Francisco", "Carlos", "Paulo", "Pedro", "Lucas", "Luiz", "Marcos", "Gabriel", "Rafael", "Daniel", "Marcelo", "Bruno", "Eduardo", "Felipe", "Rodrigo", "Mateus", "André", "Fernando", "Ricardo", "Gustavo", "Diego", "Vitor", "Leonardo", "Thiago", "Henrique", "Vinícius", "Davi", "Miguel", "Arthur", "Bernardo", "Caio"];
+const NOMES_F = ["Maria", "Ana", "Francisca", "Antônia", "Adriana", "Juliana", "Márcia", "Fernanda", "Patrícia", "Aline", "Sandra", "Camila", "Amanda", "Bruna", "Jéssica", "Letícia", "Júlia", "Luciana", "Vanessa", "Mariana", "Gabriela", "Bianca", "Larissa", "Cláudia", "Débora", "Carla", "Beatriz", "Rafaela", "Renata", "Helena", "Alice", "Laura", "Sofia", "Isabela", "Carolina"];
+const SOBRENOMES = ["Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira", "Alves", "Pereira", "Lima", "Gomes", "Costa", "Ribeiro", "Martins", "Carvalho", "Almeida", "Lopes", "Soares", "Fernandes", "Vieira", "Barbosa", "Rocha", "Dias", "Nascimento", "Andrade", "Moreira", "Nunes", "Marques", "Machado", "Mendes", "Freitas", "Cardoso", "Ramos", "Gonçalves", "Santana", "Teixeira", "Araújo", "Cavalcanti", "Correia", "Pinto", "Monteiro"];
+const RUAS = ["Rua XV de Novembro", "Rua Sete de Setembro", "Avenida Brasil", "Rua do Comércio", "Rua São José", "Rua Santos Dumont", "Rua Marechal Deodoro", "Avenida Getúlio Vargas", "Rua Tiradentes", "Rua Dom Pedro II", "Rua Rui Barbosa", "Rua Duque de Caxias", "Rua Barão do Rio Branco", "Avenida Presidente Vargas", "Rua Floriano Peixoto", "Rua Treze de Maio", "Rua São Paulo", "Rua Minas Gerais", "Rua Santa Catarina", "Avenida Rio Branco", "Rua Sete de Abril", "Rua das Flores", "Rua Padre Anchieta", "Rua Visconde de Mauá", "Rua Senador Pompeu", "Rua Frei Caneca", "Avenida Independência", "Rua Conde de Boa Vista", "Rua General Câmara", "Rua Voluntários da Pátria", "Rua Joaquim Nabuco", "Rua Benjamin Constant", "Rua Dom Bosco", "Rua Saldanha Marinho", "Rua Marechal Floriano", "Rua Pedro Álvares Cabral", "Avenida Santos Dumont", "Rua Tobias Barreto"];
+
+function escolher(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function gerarIdentidade() {
+    const primeiros = Math.random() < 0.5 ? NOMES_M : NOMES_F;
+    const s1 = escolher(SOBRENOMES);
+    let s2 = escolher(SOBRENOMES);
+    while (s2 === s1) s2 = escolher(SOBRENOMES);
+    return { nome: escolher(primeiros) + " " + s1 + " " + s2, rua: escolher(RUAS) };
+}
+
+// ============================================================
 // Fila — mostra o login atual (acesso/senha/2fa) e o número atual (numero/data/senha)
 // ============================================================
 let loginAtual = null;
 let numeroAtual = null;
+let identidadeAtual = { nome: "—", rua: "—" };
+let chaveIdentidade = null;
 
 function carregarFila() {
     if (cacheLogins.length > 0) {
@@ -121,9 +141,21 @@ function carregarFila() {
         setText("fData", "—");
         setText("fSenhaBranca", "—");
     }
-    // Campos sem origem de dados por enquanto
-    setText("fNome", "—");
-    setText("fRua", "—");
+    // Nome e rua gerados aleatoriamente; estáveis enquanto o item atual não muda
+    if (loginAtual || numeroAtual) {
+        const chave = (loginAtual ? loginAtual.id : "") + "|" + (numeroAtual ? numeroAtual.id : "");
+        if (chave !== chaveIdentidade) {
+            identidadeAtual = gerarIdentidade();
+            chaveIdentidade = chave;
+        }
+        setText("fNome", identidadeAtual.nome);
+        setText("fRua", identidadeAtual.rua);
+    } else {
+        identidadeAtual = { nome: "—", rua: "—" };
+        chaveIdentidade = null;
+        setText("fNome", "—");
+        setText("fRua", "—");
+    }
     atualizarBotoesFila();
 }
 

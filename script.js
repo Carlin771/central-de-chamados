@@ -9,6 +9,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 
 function $(id) { return document.getElementById(id); }
 function setText(id, valor) { const el = $(id); if (el) el.textContent = valor; }
+function usuarioAtual() { return sessionStorage.getItem("cc_user") || "—"; }
 
 function botao(cls, texto, fn) {
     const b = document.createElement("button");
@@ -172,9 +173,13 @@ function atualizarBotoesFila() {
 
 // Move o login atual para outra tabela (prontos ou falha) e o tira da fila
 async function moverLogin(item, destino) {
-    const { error: e1 } = await sb.from(destino).insert({
-        acesso: item.acesso, senha: item.senha, dois_fa: item.dois_fa
-    });
+    const base = { acesso: item.acesso, senha: item.senha, dois_fa: item.dois_fa };
+    let { error: e1 } = await sb.from(destino).insert(Object.assign({}, base, { atendente: usuarioAtual() }));
+    if (e1) {
+        // Fallback: tabela ainda sem a coluna "atendente"
+        const r = await sb.from(destino).insert(base);
+        e1 = r.error;
+    }
     if (e1) { mostrarToast("Erro ao mover o login"); return false; }
     const { error: e2 } = await sb.from("login").delete().eq("id", item.id);
     if (e2) { mostrarToast("Erro ao tirar da fila"); return false; }
@@ -183,9 +188,13 @@ async function moverLogin(item, destino) {
 
 // Move o número atual para a tabela usadas e o tira da fila
 async function moverNumero(item, destino) {
-    const { error: e1 } = await sb.from(destino).insert({
-        numero: item.numero, data: item.data, senha: item.senha
-    });
+    const base = { numero: item.numero, data: item.data, senha: item.senha };
+    let { error: e1 } = await sb.from(destino).insert(Object.assign({}, base, { atendente: usuarioAtual() }));
+    if (e1) {
+        // Fallback: tabela ainda sem a coluna "atendente"
+        const r = await sb.from(destino).insert(base);
+        e1 = r.error;
+    }
     if (e1) { mostrarToast("Erro ao mover o número"); return false; }
     const { error: e2 } = await sb.from("numero").delete().eq("id", item.id);
     if (e2) { mostrarToast("Erro ao tirar da fila"); return false; }
@@ -478,6 +487,50 @@ function renderDashboard() {
     setText("dashProxNumero", nd > 0 ? (cacheNumeros[0].numero || "—") : "—");
     setText("dashTotalLogins", String(ld + prontos + falhas));
     setText("dashTotalNumeros", String(nd + usados));
+    renderPorUsuario();
+}
+
+// Agrupa as ações (prontos/falhas/usados) por atendente
+function agruparPorUsuario() {
+    const mapa = {};
+    const garantir = (u) => { if (!mapa[u]) mapa[u] = { prontos: 0, falhas: 0, usados: 0 }; return mapa[u]; };
+    todosUsuarios().forEach(u => garantir(u.usuario));
+    cacheProntos.forEach(r => garantir(r.atendente || "—").prontos++);
+    cacheFalhas.forEach(r => garantir(r.atendente || "—").falhas++);
+    cacheUsadas.forEach(r => garantir(r.atendente || "—").usados++);
+    return mapa;
+}
+
+function renderPorUsuario() {
+    const tbody = $("dashPorUsuario");
+    if (!tbody) return;
+    const mapa = agruparPorUsuario();
+    const nomes = Object.keys(mapa).sort((a, b) =>
+        (mapa[b].prontos - mapa[a].prontos) ||
+        (mapa[b].usados - mapa[a].usados) ||
+        a.localeCompare(b)
+    );
+    tbody.innerHTML = "";
+    if (nomes.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.className = "user-stats-empty";
+        td.textContent = "Nenhuma ação registrada ainda.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+    }
+    nomes.forEach(nome => {
+        const m = mapa[nome];
+        const tr = document.createElement("tr");
+        [nome, String(m.prontos), String(m.falhas), String(m.usados)].forEach(txt => {
+            const td = document.createElement("td");
+            td.textContent = txt;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
 }
 
 async function atualizarDashboard() {

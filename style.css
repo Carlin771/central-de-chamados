@@ -1180,3 +1180,50 @@ body {
     text-align: right;
     word-break: break-all;
 }
+
+/* ===== Dashboard — tabela por usuário ===== */
+.user-stats-wrap {
+    overflow-x: auto;
+}
+
+.user-stats {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.user-stats th,
+.user-stats td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.user-stats th {
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: left;
+}
+
+.user-stats td {
+    font-weight: 500;
+}
+
+.user-stats th:not(:first-child),
+.user-stats td:not(:first-child) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.user-stats tr:last-child td {
+    border-bottom: none;
+}
+
+.user-stats-empty {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 14px;
+}

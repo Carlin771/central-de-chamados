@@ -49,6 +49,8 @@ function copiarTexto(texto) {
 let cacheLogins = [];
 let cacheProntos = [];
 let cacheFalhas = [];
+let cacheNumeros = [];
+let cacheUsadas = [];
 let cacheUsuarios = [];
 
 function getUsuarios() { return cacheUsuarios; }
@@ -68,19 +70,33 @@ async function recarregarFalhas() {
     if (!error && data) cacheFalhas = data;
     return !error;
 }
+async function recarregarNumeros() {
+    const { data, error } = await sb.from("numero").select("*").order("criado_em", { ascending: true });
+    if (!error && data) cacheNumeros = data;
+    return !error;
+}
+async function recarregarUsadas() {
+    const { data, error } = await sb.from("usadas").select("*").order("criado_em", { ascending: false });
+    if (!error && data) cacheUsadas = data;
+    return !error;
+}
 async function recarregarUsuarios() {
     const { data, error } = await sb.from("usuarios").select("*");
     if (!error && data) cacheUsuarios = data;
     return !error;
 }
 async function carregarTudo() {
-    await Promise.all([recarregarLogins(), recarregarProntos(), recarregarFalhas(), recarregarUsuarios()]);
+    await Promise.all([
+        recarregarLogins(), recarregarProntos(), recarregarFalhas(),
+        recarregarNumeros(), recarregarUsadas(), recarregarUsuarios()
+    ]);
 }
 
 // ============================================================
-// Fila — mostra o login atual (acesso, senha, 2fa)
+// Fila — mostra o login atual (acesso/senha/2fa) e o número atual (numero/data/senha)
 // ============================================================
 let loginAtual = null;
+let numeroAtual = null;
 
 function carregarFila() {
     if (cacheLogins.length > 0) {
@@ -94,21 +110,28 @@ function carregarFila() {
         setText("fSenha", "—");
         setText("f2fa", "—");
     }
-    // Campos sem origem de dados por enquanto (login só tem acesso/senha/2fa)
-    setText("fNumero", "—");
-    setText("fData", "—");
-    setText("fSenhaBranca", "—");
+    if (cacheNumeros.length > 0) {
+        numeroAtual = cacheNumeros[0];
+        setText("fNumero", numeroAtual.numero || "—");
+        setText("fData", numeroAtual.data || "—");
+        setText("fSenhaBranca", numeroAtual.senha || "—");
+    } else {
+        numeroAtual = null;
+        setText("fNumero", "—");
+        setText("fData", "—");
+        setText("fSenhaBranca", "—");
+    }
+    // Campos sem origem de dados por enquanto
     setText("fNome", "—");
     setText("fRua", "—");
     atualizarBotoesFila();
 }
 
 function atualizarBotoesFila() {
-    const semFila = !loginAtual;
     const pr = $("pronta");
     const fb = $("filaFalha");
-    if (pr) pr.disabled = semFila;
-    if (fb) fb.disabled = semFila;
+    if (pr) pr.disabled = (!loginAtual && !numeroAtual);
+    if (fb) fb.disabled = !loginAtual;
 }
 
 // Move o login atual para outra tabela (prontos ou falha) e o tira da fila
@@ -122,14 +145,31 @@ async function moverLogin(item, destino) {
     return true;
 }
 
+// Move o número atual para a tabela usadas e o tira da fila
+async function moverNumero(item, destino) {
+    const { error: e1 } = await sb.from(destino).insert({
+        numero: item.numero, data: item.data, senha: item.senha
+    });
+    if (e1) { mostrarToast("Erro ao mover o número"); return false; }
+    const { error: e2 } = await sb.from("numero").delete().eq("id", item.id);
+    if (e2) { mostrarToast("Erro ao tirar da fila"); return false; }
+    return true;
+}
+
 async function marcarPronta() {
-    if (!loginAtual) return;
-    const ok = await moverLogin(loginAtual, "prontos");
-    if (!ok) return;
-    await Promise.all([recarregarLogins(), recarregarProntos()]);
+    if (!loginAtual && !numeroAtual) return;
+    let mudou = false;
+    if (loginAtual && await moverLogin(loginAtual, "prontos")) mudou = true;
+    if (numeroAtual && await moverNumero(numeroAtual, "usadas")) mudou = true;
+    if (!mudou) return;
+    await Promise.all([
+        recarregarLogins(), recarregarProntos(),
+        recarregarNumeros(), recarregarUsadas()
+    ]);
     carregarFila();
     renderLoginTudo();
-    mostrarToast("Login marcado como pronto");
+    renderNumeroTudo();
+    mostrarToast("Marcado como pronto");
 }
 
 function abrirModalFalha() {
@@ -262,6 +302,113 @@ function mostrarSubLogin(sub) {
 }
 
 // ============================================================
+// Aba Número — adicionar números (numero, data, senha) e ver Disponíveis / Usadas
+// ============================================================
+async function adicionarNumero(numero, data, senha) {
+    const { error } = await sb.from("numero").insert({ numero: numero, data: data, senha: senha });
+    if (error) { mostrarToast("Erro ao adicionar número"); return false; }
+    await recarregarNumeros();
+    return true;
+}
+
+// Importação em massa: 3 linhas por número, na ordem numero, data, senha
+function parseNumeros(texto) {
+    const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    const out = [];
+    for (let i = 0; i < linhas.length; i += 3) {
+        const numero = linhas[i];
+        if (!numero) continue;
+        out.push({
+            numero: numero,
+            data: linhas[i + 1] || "",
+            senha: linhas[i + 2] || ""
+        });
+    }
+    return out;
+}
+
+async function importarNumeros(texto) {
+    const novos = parseNumeros(texto);
+    if (novos.length === 0) return 0;
+    const { error } = await sb.from("numero").insert(novos);
+    if (error) { mostrarToast("Erro ao importar"); return -1; }
+    await recarregarNumeros();
+    return novos.length;
+}
+
+// Devolve um número usado de volta para a fila
+async function devolverNumero(origem, item) {
+    const { error: e1 } = await sb.from("numero").insert({
+        numero: item.numero, data: item.data, senha: item.senha
+    });
+    if (e1) { mostrarToast("Erro ao devolver"); return; }
+    const { error: e2 } = await sb.from(origem).delete().eq("id", item.id);
+    if (e2) { mostrarToast("Erro ao remover"); return; }
+    await Promise.all([recarregarNumeros(), recarregarUsadas()]);
+    carregarFila();
+    renderNumeroTudo();
+    mostrarToast("Número devolvido para a fila");
+}
+
+async function removerNumero(origem, id) {
+    const { error } = await sb.from(origem).delete().eq("id", id);
+    if (error) { mostrarToast("Erro ao remover"); return; }
+    if (origem === "numero") await recarregarNumeros();
+    else await recarregarUsadas();
+    carregarFila();
+    renderNumeroTudo();
+}
+
+function renderListaNumero(arr, ulId, origem) {
+    const ul = $(ulId);
+    if (!ul) return;
+    ul.innerHTML = "";
+    if (!arr || arr.length === 0) {
+        const v = document.createElement("li");
+        v.className = "conta-empty";
+        v.textContent = "Nada aqui ainda.";
+        ul.appendChild(v);
+        return;
+    }
+    arr.forEach(item => {
+        const li = document.createElement("li");
+        li.className = "conta-item";
+        const info = document.createElement("div");
+        info.className = "conta-info";
+        const n = document.createElement("span");
+        n.className = "conta-email";
+        n.textContent = item.numero || "—";
+        const sub = document.createElement("span");
+        sub.className = "conta-senha";
+        sub.textContent = [item.data, item.senha].filter(Boolean).join(" · ") || "—";
+        info.appendChild(n);
+        info.appendChild(sub);
+        li.appendChild(info);
+        if (origem !== "numero") {
+            li.appendChild(botao("reopen-btn", "devolver", () => devolverNumero(origem, item)));
+        }
+        li.appendChild(botao("del-btn", "remover", () => removerNumero(origem, item.id)));
+        ul.appendChild(li);
+    });
+}
+
+function renderNumeroTudo() {
+    renderListaNumero(cacheNumeros, "listaNumeros", "numero");
+    renderListaNumero(cacheUsadas, "listaUsadas", "usadas");
+    setText("stNumDisponiveis", String(cacheNumeros.length));
+    setText("stUsadas", String(cacheUsadas.length));
+}
+
+function mostrarSubNumero(sub) {
+    document.querySelectorAll("[data-nsub]").forEach(b => {
+        b.classList.toggle("active", b.getAttribute("data-nsub") === sub);
+    });
+    $("nsubDisponiveis").classList.toggle("hidden", sub !== "disponiveis");
+    $("nsubUsadas").classList.toggle("hidden", sub !== "usadas");
+    renderNumeroTudo();
+}
+
+// ============================================================
 // Usuários e login (autenticação)
 // ============================================================
 const USUARIOS_PADRAO = [
@@ -328,6 +475,7 @@ function ehAdmin() { return sessionStorage.getItem("cc_admin") === "1"; }
 function aplicarPermissoes() {
     const adm = ehAdmin();
     $("tabLogin").classList.toggle("hidden", !adm);
+    $("tabNumero").classList.toggle("hidden", !adm);
     $("tabUsuarios").classList.toggle("hidden", !adm);
 }
 
@@ -339,15 +487,17 @@ function atualizarUsuarioUI() {
 }
 
 function mostrarAba(view) {
-    if ((view === "login" || view === "usuarios") && !ehAdmin()) view = "fila";
+    if ((view === "login" || view === "numero" || view === "usuarios") && !ehAdmin()) view = "fila";
     document.querySelectorAll(".nav-item").forEach(t => {
         t.classList.toggle("active", t.getAttribute("data-view") === view);
     });
     $("viewFila").classList.toggle("hidden", view !== "fila");
     $("viewLogin").classList.toggle("hidden", view !== "login");
+    $("viewNumero").classList.toggle("hidden", view !== "numero");
     $("viewUsuarios").classList.toggle("hidden", view !== "usuarios");
     if (view === "fila") carregarFila();
     if (view === "login") mostrarSubLogin("disponiveis");
+    if (view === "numero") mostrarSubNumero("disponiveis");
     if (view === "usuarios") renderUsuarios();
 }
 
@@ -406,6 +556,10 @@ document.querySelectorAll("[data-lsub]").forEach(b => {
     b.addEventListener("click", () => mostrarSubLogin(b.getAttribute("data-lsub")));
 });
 
+document.querySelectorAll("[data-nsub]").forEach(b => {
+    b.addEventListener("click", () => mostrarSubNumero(b.getAttribute("data-nsub")));
+});
+
 $("pronta").addEventListener("click", marcarPronta);
 $("filaFalha").addEventListener("click", abrirModalFalha);
 $("confirmarFalha").addEventListener("click", confirmarFalhaLogin);
@@ -456,6 +610,40 @@ $("limparLogins").addEventListener("click", async () => {
     carregarFila();
     renderLoginTudo();
     mostrarToast("Logins removidos");
+});
+
+$("formNumero").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const numero = $("nmNumero").value.trim();
+    if (!numero) return;
+    const ok = await adicionarNumero(numero, $("nmData").value.trim(), $("nmSenha").value.trim());
+    if (!ok) return;
+    e.target.reset();
+    $("nmNumero").focus();
+    carregarFila();
+    renderNumeroTudo();
+    mostrarToast("Número adicionado");
+});
+
+$("bulkAddNumeros").addEventListener("click", async () => {
+    const n = await importarNumeros($("bulkNumeros").value);
+    if (n <= 0) { if (n === 0) mostrarToast("Nenhum número reconhecido"); return; }
+    $("bulkNumeros").value = "";
+    carregarFila();
+    renderNumeroTudo();
+    mostrarToast(n === 1 ? "1 número importado" : n + " números importados");
+});
+
+$("limparNumeros").addEventListener("click", async () => {
+    if (cacheNumeros.length === 0) return;
+    if (!confirm("Remover todos os números disponíveis?")) return;
+    const ids = cacheNumeros.map(x => x.id);
+    const { error } = await sb.from("numero").delete().in("id", ids);
+    if (error) { mostrarToast("Erro ao limpar"); return; }
+    await recarregarNumeros();
+    carregarFila();
+    renderNumeroTudo();
+    mostrarToast("Números removidos");
 });
 
 $("formUsuario").addEventListener("submit", async (e) => {
